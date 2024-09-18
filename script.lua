@@ -77,7 +77,7 @@ while true do
         end
 
         local aa = requests({
-            Url = "",
+            Url = "103.176.24.132:2008",
             Method = "POST",
             Headers = {
                 ["Content-Type"] = "application/json"
