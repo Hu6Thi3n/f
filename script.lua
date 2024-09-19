@@ -38,9 +38,33 @@ function getinfomap()
     return a
 end
 
+local function sendMessageToServer(data)
+    local Url = 'http://103.176.24.132:2008/sendMessage'
+    
+    local jsonData = HttpService:JSONEncode(data)  -- Convert Lua table to JSON
+
+    local Response = requests {
+        Method = 'POST',
+        Url = Url,
+        Headers = {
+            ['Content-Type'] = 'application/json',  -- Set the content type to JSON
+        },
+        Body = jsonData,  -- Send the JSON data
+    }
+
+    print("Server Response Status: " .. Response.StatusCode)
+    if Response.StatusCode ~= 200 then 
+        print("Failed to send the message. Server responded with: " .. Response.Body)
+        return false 
+    end
+
+    print("Message sent successfully!")
+    return Response.Body
+end
+
 while true do 
     wait(5)
-    local a,b = pcall(function()
+    local success, err = pcall(function()
         getgenv().data.units = getunits()
         getgenv().data.Story = getinfomap() .. "/6"
         getgenv().data.Level = inventory.Level
@@ -58,35 +82,18 @@ while true do
         
         getgenv().data.last_gem = inventory.Currencies.Gems
         
-        if inventory.Items["Trait Crystal"] == nil then
-            getgenv().data.Trait_Crystal = 0
-        else
-            getgenv().data.Trait_Crystal = inventory.Items["Trait Crystal"]
-        end  -- Ensure the correct closing of 'if' block
-
-        if inventory.Items["Risky Dice"] == nil then
-            getgenv().data.risky_dice = 0
-        else
-            getgenv().data.risky_dice = inventory.Items["Risky Dice"]
-        end  -- Added missing 'end' here
-
+        getgenv().data.Trait_Crystal = inventory.Items["Trait Crystal"] or 0
+        getgenv().data.risky_dice = inventory.Items["Risky Dice"] or 0
+        
         if game.PlaceId == 17764698696 then
             getgenv().data.Status = "Lobby"
         else
             getgenv().data.Status = "In Game"
         end
 
-        local aa = requests({
-            Url = "103.176.24.132:2008",
-            Method = "POST",
-            Headers = {
-                ["Content-Type"] = "application/json"
-            },
-            Body = HttpService:JSONEncode(getgenv().data)
-        })
-        print(aa.StatusCode, aa.StatusMessage )
-        print(aa.Body)
-        writefile(plr.Name..".json", game:GetService("HttpService"):JSONEncode(getgenv().data))
+        sendMessageToServer(getgenv().data)  -- Gửi dữ liệu đến máy chủ
+
+        writefile(plr.Name..".json", HttpService:JSONEncode(getgenv().data))
     end)
-    print(a, b)
+    print(success, err)
 end
